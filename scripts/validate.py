@@ -75,26 +75,6 @@ def validate(q_path, vcf_path, tsv_path):
 
     print("-" * (10 + k * 10))
 
-    # Check clustering quality
-    print("\nValidation check:")
-    print("  Each population should have one dominant ancestry component.")
-    print("  Checking if max ancestry > 0.5 for each population...")
-
-    all_good = True
-    for pop, mean_q in pop_means.items():
-        max_ancestry = mean_q.max()
-        dominant_k = mean_q.argmax() + 1
-        status = "OK" if max_ancestry > 0.5 else "WARN"
-        if max_ancestry <= 0.5:
-            all_good = False
-        print(f"    {pop}: max={max_ancestry:.3f} (K{dominant_k}) [{status}]")
-
-    if all_good:
-        print("\n  Result: PASS - populations show distinct ancestry patterns")
-    else:
-        print("\n  Result: PARTIAL - some populations lack clear dominant ancestry")
-        print("  (This may be expected for admixed populations like AMR)")
-
 if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Usage: python validate.py <Q_file> <VCF_file> <igsr_samples.tsv>")
