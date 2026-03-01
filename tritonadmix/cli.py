@@ -5,42 +5,86 @@ import click
 
 from tritonadmix.io import load_vcf, write_q_matrix, write_p_matrix
 from tritonadmix.models.admixture import run_admixture
+from tritonadmix.viz.plot import (
+    plot_admixture, load_q_matrix, load_sample_ids, load_population_labels
+)
 
 
-@click.command()
+@click.group()
+def main():
+    """TritonAdmix: A pure Python CLI for admixture inference."""
+    pass
+
+
+@main.command()
 @click.option("--vcf", required=True, type=click.Path(exists=True), help="Path to input VCF file.")
 @click.option("-k", "--populations", default=3, type=int, show_default=True, help="Number of ancestral populations (K).")
-@click.option("-o", "--output", default=None, type=str, help="Output prefix (default: input filename).")
+@click.option("-o", "--output-dir", default="output", type=str, show_default=True, help="Output directory.")
 @click.option("--max-iter", default=100, type=int, show_default=True, help="Maximum EM iterations.")
 @click.option("--tol", default=1e-4, type=float, show_default=True, help="Convergence tolerance.")
 @click.option("--seed", default=None, type=int, help="Random seed for reproducibility.")
-def main(vcf, populations, output, max_iter, tol, seed):
-    """TritonAdmix: A pure Python CLI for admixture inference."""
+def run(vcf, populations, output_dir, max_iter, tol, seed):
+    """Run ADMIXTURE algorithm on VCF data."""
 
     click.echo(click.style("TritonAdmix", fg="green", bold=True))
 
-    # Determine output prefix
-    if output is None:
-        output = os.path.splitext(os.path.basename(vcf))[0]
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
 
-    # Load VCF
+    # Use input filename as base
+    base_name = os.path.splitext(os.path.basename(vcf))[0]
+    # Remove .vcf if still present (e.g., from .vcf.gz)
+    if base_name.endswith('.vcf'):
+        base_name = base_name[:-4]
+
     click.echo(f"Loading {vcf}...")
     G, sample_ids, variant_ids = load_vcf(vcf)
     click.echo(f"  {len(sample_ids)} individuals, {len(variant_ids)} SNPs")
 
-    # Run ADMIXTURE
     Q, F, log_liks = run_admixture(
         G, k=populations, max_iter=max_iter, tol=tol, seed=seed, verbose=True
     )
 
-    # Write output files
-    q_path = f"{output}.{populations}.Q"
-    p_path = f"{output}.{populations}.P"
+    q_path = os.path.join(output_dir, f"{base_name}.{populations}.Q")
+    p_path = os.path.join(output_dir, f"{base_name}.{populations}.P")
 
     write_q_matrix(Q, q_path)
     write_p_matrix(F, p_path)
 
     click.echo(f"Output written to {q_path} and {p_path}")
+
+
+@main.command()
+@click.option("-q", "--q-matrix", required=True, type=click.Path(exists=True), help="Path to Q matrix file.")
+@click.option("-o", "--output", default=None, type=str, help="Output plot path (default: output/<name>.png).")
+@click.option("--vcf", default=None, type=click.Path(exists=True), help="VCF file (for sample order).")
+@click.option("--labels", default=None, type=click.Path(exists=True), help="Population labels TSV (igsr_samples.tsv format).")
+@click.option("--title", default=None, type=str, help="Plot title.")
+@click.option("--dpi", default=150, type=int, show_default=True, help="Output resolution.")
+def plot(q_matrix, output, vcf, labels, title, dpi):
+    """Plot ancestry proportions from Q matrix."""
+
+    click.echo(click.style("TritonAdmix Plot", fg="green", bold=True))
+
+    Q = load_q_matrix(q_matrix)
+    click.echo(f"Loaded Q matrix: {Q.shape[0]} individuals, K={Q.shape[1]}")
+
+    # Default output path: output/<q_matrix_name>.png
+    if output is None:
+        os.makedirs("output", exist_ok=True)
+        base_name = os.path.splitext(os.path.basename(q_matrix))[0]
+        output = os.path.join("output", f"{base_name}.png")
+
+    population_labels = None
+    if vcf and labels:
+        sample_ids = load_sample_ids(vcf)
+        population_labels = load_population_labels(labels, sample_ids)
+        click.echo(f"Loaded population labels for {len(population_labels)} samples")
+
+    plot_admixture(Q, output_path=output, population_labels=population_labels,
+                   title=title, dpi=dpi)
+
+    click.echo(f"Plot saved to {output}")
 
 
 if __name__ == "__main__":

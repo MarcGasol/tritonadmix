@@ -211,3 +211,7 @@ DESIGN.md
 impl_plan.md
 instruction.md
 instruction.json
+
+output/
+data/
+.DS_Store

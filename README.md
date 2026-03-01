@@ -48,7 +48,36 @@ We're using pytest to test the CLI parsing and the model logic. Before you push 
 ```Bash
 pytest
 ```
-## 4. How We're Doing Git
+## 4. Usage
+
+**Run ADMIXTURE to get Q and P matrices:**
+```bash
+tritonadmix run --vcf data/1000G_chr22_pruned.vcf.gz -k 5 -o output/
+```
+
+This outputs:
+- `output/1000G_chr22_pruned.5.Q` — ancestry proportions (n_individuals × k)
+- `output/1000G_chr22_pruned.5.P` — allele frequencies (n_snps × k)
+
+**Plot the Q matrix:**
+```bash
+tritonadmix plot -q output/1000G_chr22_pruned.5.Q
+```
+
+**Plot with population labels:**
+```bash
+tritonadmix plot -q output/1000G_chr22_pruned.5.Q \
+    --vcf data/1000G_chr22_pruned.vcf.gz \
+    --labels data/igsr_samples.tsv
+```
+
+**Full options:**
+```bash
+tritonadmix run --help
+tritonadmix plot --help
+```
+
+## 5. How We're Doing Git
 The main branch is strictly protected. You literally can't push directly to it.
 
 Whenever you're building a new feature or fixing a bug, branch off main:
