@@ -55,7 +55,7 @@ def test_run_admixture():
     np.random.seed(42)
     G = np.random.randint(0, 3, size=(20, 50)).astype(np.int8)  # (20 individuals, 50 snps)
 
-    Q, F, log_liks = run_admixture(G, k=2, max_iter=20, seed=42, verbose=False)
+    Q, F, log_liks, timing = run_admixture(G, k=2, max_iter=20, seed=42, verbose=False)
 
     assert Q.shape == (20, 2)
     assert F.shape == (2, 50)
@@ -70,3 +70,9 @@ def test_run_admixture():
     # Log-likelihood should generally increase (or stay same)
     for i in range(1, len(log_liks)):
         assert log_liks[i] >= log_liks[i-1] - 1e-6
+
+    # Timing dict has expected keys
+    assert 'total' in timing
+    assert 'estep' in timing
+    assert 'mstep' in timing
+    assert timing['n_iters'] > 0

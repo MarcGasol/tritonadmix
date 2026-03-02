@@ -16,6 +16,23 @@ def main():
     pass
 
 
+def print_timing(timing):
+    """Print timing summary table."""
+    total = timing['total']
+    n_iters = timing['n_iters']
+
+    click.echo(click.style("\nTiming Summary:", fg="cyan", bold=True))
+    click.echo(f"  Total:           {total:.2f}s")
+    click.echo(f"  Initialization:  {timing['init']:.2f}s ({100*timing['init']/total:.1f}%)")
+    click.echo(f"  E-step:          {timing['estep']:.2f}s ({100*timing['estep']/total:.1f}%) "
+               f"- avg {timing['estep']/n_iters:.3f}s/iter")
+    click.echo(f"  M-step:          {timing['mstep']:.2f}s ({100*timing['mstep']/total:.1f}%) "
+               f"- avg {timing['mstep']/n_iters:.3f}s/iter")
+    click.echo(f"  Log-likelihood:  {timing['loglik']:.2f}s ({100*timing['loglik']/total:.1f}%) "
+               f"- avg {timing['loglik']/n_iters:.3f}s/iter")
+    click.echo(f"  Iterations:      {n_iters}")
+
+
 @main.command()
 @click.option("--vcf", required=True, type=click.Path(exists=True), help="Path to input VCF file.")
 @click.option("-k", "--populations", default=3, type=int, show_default=True, help="Number of ancestral populations (K).")
@@ -23,7 +40,8 @@ def main():
 @click.option("--max-iter", default=100, type=int, show_default=True, help="Maximum EM iterations.")
 @click.option("--tol", default=1e-4, type=float, show_default=True, help="Convergence tolerance.")
 @click.option("--seed", default=None, type=int, help="Random seed for reproducibility.")
-def run(vcf, populations, output_dir, max_iter, tol, seed):
+@click.option("--profile", is_flag=True, help="Show timing breakdown.")
+def run(vcf, populations, output_dir, max_iter, tol, seed, profile):
     """Run ADMIXTURE algorithm on VCF data."""
 
     click.echo(click.style("TritonAdmix", fg="green", bold=True))
@@ -41,7 +59,7 @@ def run(vcf, populations, output_dir, max_iter, tol, seed):
     G, sample_ids, variant_ids = load_vcf(vcf)
     click.echo(f"  {len(sample_ids)} individuals, {len(variant_ids)} SNPs")
 
-    Q, F, log_liks = run_admixture(
+    Q, F, log_liks, timing = run_admixture(
         G, k=populations, max_iter=max_iter, tol=tol, seed=seed, verbose=True
     )
 
@@ -52,6 +70,9 @@ def run(vcf, populations, output_dir, max_iter, tol, seed):
     write_p_matrix(F, p_path)
 
     click.echo(f"Output written to {q_path} and {p_path}")
+
+    if profile:
+        print_timing(timing)
 
 
 @main.command()

@@ -1,5 +1,6 @@
 # tritonadmix/models/admixture.py
 
+import time
 import numpy as np
 
 
@@ -125,27 +126,46 @@ def run_admixture(G: np.ndarray, k: int, max_iter: int = 100, tol: float = 1e-4,
     max_iter: maximum EM iterations
     tol: convergence tolerance for log-likelihood change
 
-    Returns Q, F, log_likelihoods
+    Returns Q, F, log_likelihoods, timing_stats
     """
     n_individuals, n_snps = G.shape
 
     if verbose:
         print(f"Running ADMIXTURE: {n_individuals} individuals, {n_snps} SNPs, K={k}")
 
+    # Timing accumulators
+    t_start = time.perf_counter()
+
+    t_init_start = time.perf_counter()
     Q, F = initialize(n_individuals, n_snps, k, seed=seed)
+    t_init = time.perf_counter() - t_init_start
+
+    t_estep_total = 0.0
+    t_mstep_total = 0.0
+    t_ll_total = 0.0
 
     log_liks = []
     prev_ll = -np.inf
+    n_iters = 0
 
     for iteration in range(max_iter):
+        n_iters += 1
+
         # E-step
+        t0 = time.perf_counter()
         gamma_alt, gamma_ref = e_step(G, Q, F)
+        t_estep_total += time.perf_counter() - t0
 
         # M-step
+        t0 = time.perf_counter()
         Q, F = m_step(G, gamma_alt, gamma_ref)
+        t_mstep_total += time.perf_counter() - t0
 
         # Compute log-likelihood
+        t0 = time.perf_counter()
         ll = log_likelihood(G, Q, F)
+        t_ll_total += time.perf_counter() - t0
+
         log_liks.append(ll)
 
         if verbose and (iteration + 1) % 10 == 0:
@@ -159,4 +179,15 @@ def run_admixture(G: np.ndarray, k: int, max_iter: int = 100, tol: float = 1e-4,
 
         prev_ll = ll
 
-    return Q, F, log_liks
+    t_total = time.perf_counter() - t_start
+
+    timing = {
+        'total': t_total,
+        'init': t_init,
+        'estep': t_estep_total,
+        'mstep': t_mstep_total,
+        'loglik': t_ll_total,
+        'n_iters': n_iters,
+    }
+
+    return Q, F, log_liks, timing
