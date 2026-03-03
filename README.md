@@ -1,6 +1,8 @@
 # TritonAdmix
 
-Hey! This is the repo for our TritonAdmix CLI tool. We're using `uv` to manage packages because it's way faster and keeps our environments perfectly synced.
+Hey! This is the repo for our TritonAdmix CLI tool. This is a pure python-based implementation of the original ADMIXTURE algorithm.
+
+We're using `uv` to manage packages because it's way faster and keeps our environments perfectly synced.
 
 Here is the quick-start guide to get your local environment running so we don't break each other's code.
 
