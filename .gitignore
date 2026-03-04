@@ -217,3 +217,5 @@ data/
 .DS_Store
 
 exp_results.md
+benchmark.sh
+benchmark_output/
