@@ -62,6 +62,11 @@ tritonadmix run --vcf data/1000G_chr22_pruned.vcf.gz -k 5 -o output/
 tritonadmix run --vcf data/1000G_chr22_pruned.vcf.gz -k 5 -o output/ --profile
 ```
 
+**Run with SQUAREM acceleration (fewer iterations):**
+```bash
+tritonadmix run --vcf data/1000G_chr22_pruned.vcf.gz -k 5 -o output/ --method squarem --profile
+```
+
 This outputs:
 - `output/1000G_chr22_pruned.5.Q` — ancestry proportions (n_individuals × k)
 - `output/1000G_chr22_pruned.5.P` — allele frequencies (n_snps × k)

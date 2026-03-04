@@ -41,7 +41,9 @@ def print_timing(timing):
 @click.option("--tol", default=1e-4, type=float, show_default=True, help="Convergence tolerance.")
 @click.option("--seed", default=None, type=int, help="Random seed for reproducibility.")
 @click.option("--profile", is_flag=True, help="Show timing breakdown.")
-def run(vcf, populations, output_dir, max_iter, tol, seed, profile):
+@click.option("--method", default="em", type=click.Choice(["em", "squarem"]),
+              show_default=True, help="Algorithm: 'em' (standard) or 'squarem' (accelerated).")
+def run(vcf, populations, output_dir, max_iter, tol, seed, profile, method):
     """Run ADMIXTURE algorithm on VCF data."""
 
     click.echo(click.style("TritonAdmix", fg="green", bold=True))
@@ -60,7 +62,7 @@ def run(vcf, populations, output_dir, max_iter, tol, seed, profile):
     click.echo(f"  {len(sample_ids)} individuals, {len(variant_ids)} SNPs")
 
     Q, F, log_liks, timing = run_admixture(
-        G, k=populations, max_iter=max_iter, tol=tol, seed=seed, verbose=True
+        G, k=populations, max_iter=max_iter, tol=tol, seed=seed, verbose=True, method=method
     )
 
     q_path = os.path.join(output_dir, f"{base_name}.{populations}.Q")
