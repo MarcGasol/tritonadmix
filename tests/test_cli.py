@@ -98,3 +98,31 @@ def test_plot_output():
 
         assert result.exit_code == 0, f"Plot failed: {result.output}"
         assert os.path.exists(plot_path)
+
+
+def test_cv_help():
+    runner = CliRunner()
+    result = runner.invoke(main, ['cv', '--help'])
+    assert result.exit_code == 0
+    assert "--k-min" in result.output
+    assert "--k-max" in result.output
+    assert "--folds" in result.output
+
+
+def test_cv_run():
+    runner = CliRunner()
+    vcf_path = os.path.join(os.path.dirname(__file__), 'data', 'test.vcf')
+
+    result = runner.invoke(main, [
+        'cv',
+        '--vcf', vcf_path,
+        '--k-min', '2',
+        '--k-max', '3',
+        '--folds', '2',
+        '--max-iter', '5',
+        '--seed', '42'
+    ])
+
+    assert result.exit_code == 0, f"CV failed: {result.output}"
+    assert "Optimal K" in result.output
+    assert "CV error" in result.output

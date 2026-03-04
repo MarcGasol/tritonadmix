@@ -5,6 +5,7 @@ import click
 
 from tritonadmix.io import load_vcf, write_q_matrix, write_p_matrix
 from tritonadmix.models.admixture import run_admixture
+from tritonadmix.models.cv import run_cv
 from tritonadmix.viz.plot import (
     plot_admixture, load_q_matrix, load_sample_ids, load_population_labels
 )
@@ -106,6 +107,46 @@ def plot(q_matrix, output, vcf, labels, title, dpi):
                    title=title, dpi=dpi)
 
     click.echo(f"Plot saved to {output}")
+
+
+@main.command()
+@click.option("--vcf", required=True, type=click.Path(exists=True), help="Path to input VCF file.")
+@click.option("--k-min", default=2, type=int, show_default=True, help="Minimum K to test.")
+@click.option("--k-max", default=6, type=int, show_default=True, help="Maximum K to test.")
+@click.option("--folds", default=5, type=int, show_default=True, help="Number of CV folds.")
+@click.option("--max-iter", default=100, type=int, show_default=True, help="Maximum EM iterations.")
+@click.option("--tol", default=1e-4, type=float, show_default=True, help="Convergence tolerance.")
+@click.option("--seed", default=None, type=int, help="Random seed for reproducibility.")
+@click.option("-o", "--output", default=None, type=str, help="Output plot path for CV curve.")
+def cv(vcf, k_min, k_max, folds, max_iter, tol, seed, output):
+    """Run cross-validation to find optimal K."""
+
+    click.echo(click.style("TritonAdmix Cross-Validation", fg="green", bold=True))
+
+    click.echo(f"Loading {vcf}...")
+    G, sample_ids, variant_ids = load_vcf(vcf)
+    click.echo(f"  {len(sample_ids)} individuals, {len(variant_ids)} SNPs")
+    click.echo(f"  Testing K={k_min} to K={k_max} with {folds}-fold CV\n")
+
+    results = run_cv(
+        G, k_min=k_min, k_max=k_max, n_folds=folds,
+        max_iter=max_iter, tol=tol, seed=seed, verbose=True
+    )
+
+    # Print summary
+    click.echo(click.style("\nCV Results:", fg="cyan", bold=True))
+    for i, k in enumerate(results['k']):
+        marker = " <-- best" if k == results['best_k'] else ""
+        click.echo(f"  K={k}: CV error = {results['mean_error'][i]:.4f} "
+                   f"(+/- {results['std_error'][i]:.4f}){marker}")
+
+    click.echo(f"\nOptimal K = {results['best_k']}")
+
+    # Plot if requested
+    if output:
+        from tritonadmix.viz.plot import plot_cv
+        plot_cv(results, output_path=output)
+        click.echo(f"CV plot saved to {output}")
 
 
 if __name__ == "__main__":

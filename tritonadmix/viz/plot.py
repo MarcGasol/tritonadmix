@@ -121,3 +121,42 @@ def plot_admixture(Q, output_path=None, population_labels=None, sort_by_populati
         plt.show()
 
     plt.close()
+
+
+def plot_cv(results, output_path=None, dpi=150):
+    """
+    Plot CV error vs K.
+
+    results: dict with 'k', 'mean_error', 'std_error', 'best_k'
+    """
+    k_vals = results['k']
+    mean_err = results['mean_error']
+    std_err = results['std_error']
+    best_k = results['best_k']
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    ax.errorbar(k_vals, mean_err, yerr=std_err, marker='o', capsize=4,
+                linewidth=2, markersize=8, color='steelblue')
+
+    # Highlight best K
+    best_idx = k_vals.index(best_k)
+    ax.scatter([best_k], [mean_err[best_idx]], color='red', s=150,
+               zorder=5, label=f'Best K={best_k}')
+
+    ax.set_xlabel('K (number of populations)', fontsize=12)
+    ax.set_ylabel('CV Error', fontsize=12)
+    ax.set_title('Cross-Validation Error vs K', fontsize=14)
+    ax.set_xticks(k_vals)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+
+    if output_path:
+        plt.savefig(output_path, dpi=dpi, bbox_inches='tight')
+        print(f"Plot saved to {output_path}")
+    else:
+        plt.show()
+
+    plt.close()

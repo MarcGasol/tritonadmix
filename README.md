@@ -78,10 +78,21 @@ tritonadmix plot -q output/1000G_chr22_pruned.5.Q \
     --labels data/igsr_samples.tsv
 ```
 
+**Cross-validation to find optimal K:**
+```bash
+tritonadmix cv --vcf data/1000G_chr22_pruned.vcf.gz --k-min 2 --k-max 6
+```
+
+**CV with plot output:**
+```bash
+tritonadmix cv --vcf data/1000G_chr22_pruned.vcf.gz --k-min 2 --k-max 6 -o output/cv_plot.png
+```
+
 **Full options:**
 ```bash
 tritonadmix run --help
 tritonadmix plot --help
+tritonadmix cv --help
 ```
 
 ## 5. How We're Doing Git
