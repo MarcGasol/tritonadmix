@@ -230,8 +230,15 @@ def run_admixture_squarem(G, k, max_iter, tol, seed, verbose):
             Q_new = project_Q(Q_new)
             F_new = project_F(F_new)
 
-            # Standard SQUAREM: stabilizing EM step (no likelihood check)
-            Q, F = em_step(G, Q_new, F_new)
+            # Check if extrapolation improved over plain 2-step EM
+            ll_new = log_likelihood(G, Q_new, F_new)
+            ll_em = log_likelihood(G, Q2, F2)
+
+            if ll_new >= ll_em:
+                Q, F = Q_new, F_new
+            else:
+                # Extrapolation failed, use plain EM result
+                Q, F = Q2, F2
 
         t_em_total += time.perf_counter() - t0
 
